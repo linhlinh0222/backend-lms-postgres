@@ -1,0 +1,32 @@
+# ==== Common ====
+server:
+  shutdown: graceful
+
+spring:
+  application:
+    name: backend-lms-postgres
+  threads:
+    virtual:
+      enabled: true
+  profiles:
+    active: dev
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+
+logging:
+  level:
+    root: INFO
+    com.example.lms: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+    operationsSorter: method
+    tagsSorter: alpha
+    displayRequestDuration: true
