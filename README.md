@@ -28,156 +28,156 @@ Hệ thống Learning Management System (LMS) dành cho ngành Hàng hải, đư
 - **Maven 3.x** - Build and dependency management
 - **Lombok** - Code generation
 
-## 🚀 Quick Start
+## 🚀 Hướng dẫn khởi động nhanh / Quick Start
 
-### **System Requirements**
+### **Yêu cầu hệ thống / System Requirements**
 - **Java 21** (JDK 21 với Virtual Threads support)
 - **Maven 3.6+** 
 - **Docker & Docker Compose**
-- **Git** (for version control)
+- **Git** (để quản lý phiên bản / for version control)
 
-### **Development Setup**
+### **Thiết lập môi trường phát triển / Development Setup**
 ```powershell
-# 1. Clone repository
+# 1. Clone repository / Tải mã nguồn
 git clone https://github.com/linhlinh0222/backend-lms-postgres.git
 cd backend-lms-postgres
 
-# 2. Start database services (PostgreSQL + pgAdmin)
+# 2. Khởi động database services (PostgreSQL + pgAdmin)
 docker compose up -d
 
-# 3. Wait for database to be ready (check health)
+# 3. Đợi database sẵn sàng (kiểm tra health)
 docker compose ps
 
-# 4. Build và run application
+# 4. Build và chạy ứng dụng
 mvn clean package
 mvn spring-boot:run
 
-# Alternative: Run with specific profile
+# Tùy chọn: Chạy với profile cụ thể
 mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-### **First Time Setup**
+### **Thiết lập lần đầu / First Time Setup**
 ```powershell
-# Check if migration ran successfully  
+# Kiểm tra migration chạy thành công
 curl http://localhost:8088/api/v1/health
 
-# Access Swagger UI for testing
-# Browser: http://localhost:8088/swagger-ui
+# Truy cập Swagger UI để test API
+# Mở trình duyệt: http://localhost:8088/swagger-ui
 ```
 
-## 🔗 Service Endpoints
+## 🔗 Điểm truy cập dịch vụ / Service Endpoints
 
-### **Application URLs**
+### **Các URL ứng dụng / Application URLs**
 - **API Base URL**: http://localhost:8088/api/v1
 - **Swagger UI**: http://localhost:8088/swagger-ui/index.html
 - **Health Check**: http://localhost:8088/api/v1/health
 - **pgAdmin**: http://localhost:8081
   - **Email**: `admin@devmail.net`
-  - **Password**: `S3cure!Passw0rd`
+  - **Mật khẩu / Password**: `S3cure!Passw0rd`
 
-## 📚 Complete API Documentation
+## 📚 Tài liệu API đầy đủ / Complete API Documentation
 
-### **🔐 Authentication & User Management**
+### **🔐 Xác thực & Quản lý người dùng / Authentication & User Management**
 ```
-POST   /api/v1/auth/register     - User registration
-POST   /api/v1/auth/login        - User login (JWT)
-POST   /api/v1/auth/logout       - User logout  
-POST   /api/v1/auth/refresh      - Refresh JWT token
-GET    /api/v1/auth/profile      - Get user profile
-PUT    /api/v1/auth/profile      - Update user profile
+POST   /api/v1/auth/register     - Đăng ký người dùng / User registration
+POST   /api/v1/auth/login        - Đăng nhập (JWT) / User login (JWT)
+POST   /api/v1/auth/logout       - Đăng xuất / User logout  
+POST   /api/v1/auth/refresh      - Làm mới JWT token / Refresh JWT token
+GET    /api/v1/auth/profile      - Lấy thông tin cá nhân / Get user profile
+PUT    /api/v1/auth/profile      - Cập nhật thông tin / Update user profile
 
-GET    /api/v1/users             - List all users (ADMIN)
-GET    /api/v1/users/{id}        - Get user details
-PUT    /api/v1/users/{id}        - Update user
-DELETE /api/v1/users/{id}        - Delete user (ADMIN)
-PUT    /api/v1/users/{id}/role   - Change user role (ADMIN)
-```
-
-### **📚 Course Management**
-```
-GET    /api/v1/courses           - List courses (with pagination)
-GET    /api/v1/courses/{id}      - Get course details  
-POST   /api/v1/courses           - Create course (TEACHER/ADMIN)
-PUT    /api/v1/courses/{id}      - Update course (TEACHER/ADMIN)
-DELETE /api/v1/courses/{id}      - Delete course (ADMIN)
-POST   /api/v1/courses/{id}/enroll - Enroll in course (STUDENT)
+GET    /api/v1/users             - Danh sách người dùng / List all users (ADMIN)
+GET    /api/v1/users/{id}        - Chi tiết người dùng / Get user details
+PUT    /api/v1/users/{id}        - Cập nhật người dùng / Update user
+DELETE /api/v1/users/{id}        - Xóa người dùng / Delete user (ADMIN)
+PUT    /api/v1/users/{id}/role   - Thay đổi vai trò / Change user role (ADMIN)
 ```
 
-### **📖 Section & Lesson Management**
+### **📚 Quản lý khóa học / Course Management**
 ```
-GET    /api/v1/sections          - List sections
-POST   /api/v1/sections          - Create section (TEACHER/ADMIN)
-PUT    /api/v1/sections/{id}     - Update section
-DELETE /api/v1/sections/{id}     - Delete section
-
-GET    /api/v1/lessons           - List lessons
-POST   /api/v1/lessons           - Create lesson (TEACHER/ADMIN)
-PUT    /api/v1/lessons/{id}      - Update lesson
-DELETE /api/v1/lessons/{id}      - Delete lesson
+GET    /api/v1/courses           - Danh sách khóa học / List courses (with pagination)
+GET    /api/v1/courses/{id}      - Chi tiết khóa học / Get course details  
+POST   /api/v1/courses           - Tạo khóa học / Create course (TEACHER/ADMIN)
+PUT    /api/v1/courses/{id}      - Cập nhật khóa học / Update course (TEACHER/ADMIN)
+DELETE /api/v1/courses/{id}      - Xóa khóa học / Delete course (ADMIN)
+POST   /api/v1/courses/{id}/enroll - Đăng ký khóa học / Enroll in course (STUDENT)
 ```
 
-### **📝 Assignment Management**
+### **📖 Quản lý chương & bài học / Section & Lesson Management**
 ```
-GET    /api/v1/assignments       - List assignments
-GET    /api/v1/assignments/{id}  - Get assignment details
-POST   /api/v1/assignments       - Create assignment (TEACHER/ADMIN)
-PUT    /api/v1/assignments/{id}  - Update assignment
-DELETE /api/v1/assignments/{id}  - Delete assignment
+GET    /api/v1/sections          - Danh sách chương / List sections
+POST   /api/v1/sections          - Tạo chương / Create section (TEACHER/ADMIN)
+PUT    /api/v1/sections/{id}     - Cập nhật chương / Update section
+DELETE /api/v1/sections/{id}     - Xóa chương / Delete section
 
-POST   /api/v1/assignments/{id}/submit    - Submit assignment (STUDENT)
-GET    /api/v1/assignments/{id}/submissions - List submissions (TEACHER/ADMIN)
-PUT    /api/v1/assignments/submissions/{id}/grade - Grade submission (TEACHER/ADMIN)
-```
-
-### **👨‍💼 Admin Dashboard & Analytics**
-```
-GET    /api/v1/admin/stats       - System statistics
-GET    /api/v1/admin/users       - User analytics
-GET    /api/v1/admin/courses     - Course analytics  
-GET    /api/v1/admin/assignments - Assignment analytics
+GET    /api/v1/lessons           - Danh sách bài học / List lessons
+POST   /api/v1/lessons           - Tạo bài học / Create lesson (TEACHER/ADMIN)
+PUT    /api/v1/lessons/{id}      - Cập nhật bài học / Update lesson
+DELETE /api/v1/lessons/{id}      - Xóa bài học / Delete lesson
 ```
 
-### **📁 File Upload Management**
+### **📝 Quản lý bài tập / Assignment Management**
 ```
-POST   /api/v1/files/upload      - Upload file
-GET    /api/v1/files/{filename}  - Download file
-DELETE /api/v1/files/{filename}  - Delete file (ADMIN)
+GET    /api/v1/assignments       - Danh sách bài tập / List assignments
+GET    /api/v1/assignments/{id}  - Chi tiết bài tập / Get assignment details
+POST   /api/v1/assignments       - Tạo bài tập / Create assignment (TEACHER/ADMIN)
+PUT    /api/v1/assignments/{id}  - Cập nhật bài tập / Update assignment
+DELETE /api/v1/assignments/{id}  - Xóa bài tập / Delete assignment
+
+POST   /api/v1/assignments/{id}/submit    - Nộp bài tập / Submit assignment (STUDENT)
+GET    /api/v1/assignments/{id}/submissions - Danh sách bài nộp / List submissions (TEACHER/ADMIN)
+PUT    /api/v1/assignments/submissions/{id}/grade - Chấm điểm / Grade submission (TEACHER/ADMIN)
 ```
 
-## 🗄️ Database Schema
+### **👨‍💼 Bảng điều khiển Admin / Admin Dashboard & Analytics**
+```
+GET    /api/v1/admin/stats       - Thống kê hệ thống / System statistics
+GET    /api/v1/admin/users       - Phân tích người dùng / User analytics
+GET    /api/v1/admin/courses     - Phân tích khóa học / Course analytics  
+GET    /api/v1/admin/assignments - Phân tích bài tập / Assignment analytics
+```
 
-### **PostgreSQL Configuration**
-- **Version**: PostgreSQL 16-alpine
-- **Connection**: localhost:5432/lms
-- **Credentials**: `lms` / `lms`
-- **Encoding**: UTF-8
-- **Timezone**: UTC
+### **📁 Quản lý tải file / File Upload Management**
+```
+POST   /api/v1/files/upload      - Tải file lên / Upload file
+GET    /api/v1/files/{filename}  - Tải file xuống / Download file
+DELETE /api/v1/files/{filename}  - Xóa file / Delete file (ADMIN)
+```
 
-### **Migration History (Flyway)**
+## 🗄️ Cấu trúc cơ sở dữ liệu / Database Schema
+
+### **Cấu hình PostgreSQL / PostgreSQL Configuration**
+- **Phiên bản / Version**: PostgreSQL 16-alpine
+- **Kết nối / Connection**: localhost:5432/lms
+- **Thông tin đăng nhập / Credentials**: `lms` / `lms`
+- **Mã hóa / Encoding**: UTF-8
+- **Múi giờ / Timezone**: UTC
+
+### **Lịch sử Migration (Flyway) / Migration History**
 ```sql
-V1__init.sql                          -- Initial schema (courses)
-V2__add_users_and_update_courses.sql  -- User management & course updates  
-V3__create_course_content_structure.sql -- Sections & lessons
-V4__create_assignment_submissions_table.sql -- Assignment system
-V5__add_instructions_to_assignments.sql -- Assignment enhancements
-V6__add_description_to_lessons.sql   -- Lesson descriptions
+V1__init.sql                          -- Schema ban đầu (khóa học) / Initial schema (courses)
+V2__add_users_and_update_courses.sql  -- Quản lý người dùng / User management & course updates  
+V3__create_course_content_structure.sql -- Chương & bài học / Sections & lessons
+V4__create_assignment_submissions_table.sql -- Hệ thống bài tập / Assignment system
+V5__add_instructions_to_assignments.sql -- Cải tiến bài tập / Assignment enhancements
+V6__add_description_to_lessons.sql   -- Mô tả bài học / Lesson descriptions
 ```
 
-### **Database Entity Relations**
+### **Mối quan hệ thực thể / Database Entity Relations**
 ```
-Users (1) ←→ (N) Courses (enrollment)
-Courses (1) → (N) Sections → (N) Lessons
-Courses (1) → (N) Assignments → (N) AssignmentSubmissions
-Users (1) → (N) AssignmentSubmissions
+Users (1) ←→ (N) Courses (đăng ký khóa học / enrollment)
+Courses (1) → (N) Sections → (N) Lessons (cấu trúc nội dung)
+Courses (1) → (N) Assignments → (N) AssignmentSubmissions (hệ thống bài tập)
+Users (1) → (N) AssignmentSubmissions (bài nộp của sinh viên)
 ```
 
-## 📁 Project Architecture
+## 📁 Kiến trúc dự án / Project Architecture
 
 ```
 backend-lms-postgres/
-├── docker-compose.yml           # PostgreSQL + pgAdmin setup
-├── pom.xml                     # Maven dependencies
-├── README.md                   # Project documentation
+├── docker-compose.yml           # Thiết lập PostgreSQL + pgAdmin
+├── pom.xml                     # Quản lý dependencies Maven
+├── README.md                   # Tài liệu dự án
 └── src/main/
     ├── java/com/example/lms/
     │   ├── BackendLmsPostgresApplication.java
@@ -255,43 +255,43 @@ services:
     depends_on: [db]
 ```
 
-## 🎯 Key Features Implemented
+## 🎯 Tính năng chính đã triển khai / Key Features Implemented
 
-### **✅ Authentication & Authorization**
-- JWT-based stateless authentication
-- Role-based access control (ADMIN/TEACHER/STUDENT)
-- Password encryption with BCrypt
-- Token refresh mechanism
-- Session management
+### **✅ Xác thực & Phân quyền / Authentication & Authorization**
+- Xác thực stateless dựa trên JWT / JWT-based stateless authentication
+- Kiểm soát truy cập theo vai trò (ADMIN/TEACHER/STUDENT) / Role-based access control
+- Mã hóa mật khẩu với BCrypt / Password encryption with BCrypt
+- Cơ chế làm mới token / Token refresh mechanism
+- Quản lý phiên làm việc / Session management
 
-### **✅ Course Management System**
-- Complete CRUD operations for courses
-- Course enrollment system
-- Section and lesson organization
-- Course status management (DRAFT/PUBLISHED/ARCHIVED)
+### **✅ Hệ thống quản lý khóa học / Course Management System**
+- Đầy đủ các thao tác CRUD cho khóa học / Complete CRUD operations for courses
+- Hệ thống đăng ký khóa học / Course enrollment system
+- Tổ chức chương và bài học / Section and lesson organization
+- Quản lý trạng thái khóa học (DRAFT/PUBLISHED/ARCHIVED) / Course status management
 
-### **✅ Assignment & Submission System**
-- Assignment creation with due dates
-- File upload for assignment submissions
-- Grading system with feedback
-- Assignment status tracking
+### **✅ Hệ thống bài tập & nộp bài / Assignment & Submission System**
+- Tạo bài tập với hạn nộp / Assignment creation with due dates
+- Tải file cho bài nộp / File upload for assignment submissions
+- Hệ thống chấm điểm với phản hồi / Grading system with feedback
+- Theo dõi trạng thái bài tập / Assignment status tracking
 
-### **✅ User Management**
-- User registration and profile management
-- Role assignment and permission control
-- User analytics and reporting
+### **✅ Quản lý người dùng / User Management**
+- Đăng ký và quản lý hồ sơ / User registration and profile management
+- Phân công vai trò và kiểm soát quyền / Role assignment and permission control
+- Phân tích và báo cáo người dùng / User analytics and reporting
 
-### **✅ Admin Dashboard**
-- System statistics and analytics
-- User activity monitoring
-- Course performance metrics
-- Assignment completion tracking
+### **✅ Bảng điều khiển Admin / Admin Dashboard**
+- Thống kê và phân tích hệ thống / System statistics and analytics
+- Giám sát hoạt động người dùng / User activity monitoring
+- Số liệu hiệu suất khóa học / Course performance metrics
+- Theo dõi hoàn thành bài tập / Assignment completion tracking
 
-### **✅ API Documentation**
-- Complete Swagger/OpenAPI documentation
-- Interactive API testing interface
-- Request/response examples
-- Authentication integration in Swagger UI
+### **✅ Tài liệu API / API Documentation**
+- Tài liệu Swagger/OpenAPI đầy đủ / Complete Swagger/OpenAPI documentation
+- Giao diện test API tương tác / Interactive API testing interface
+- Ví dụ request/response / Request/response examples
+- Tích hợp xác thực trong Swagger UI / Authentication integration in Swagger UI
 
 ## 🔧 Environment Configurations
 
@@ -309,31 +309,31 @@ services:
 - **Logging Level**: INFO
 - **Security**: Enhanced configurations
 
-## ⚠️ Known Issues & Improvements Needed
+## ⚠️ Vấn đề đã biết & Cần cải thiện / Known Issues & Improvements Needed
 
-### **🔒 Security Concerns**
-- JWT secret is hard-coded (should use environment variable)
-- Missing rate limiting for API endpoints
-- CORS configuration needs refinement
-- No API versioning strategy
+### **🔒 Mối quan tâm bảo mật / Security Concerns**
+- JWT secret được hard-code (nên dùng biến môi trường) / JWT secret is hard-coded (should use environment variable)
+- Thiếu giới hạn tốc độ cho API endpoints / Missing rate limiting for API endpoints
+- Cấu hình CORS cần tinh chỉnh / CORS configuration needs refinement
+- Không có chiến lược API versioning / No API versioning strategy
 
-### **🗄️ Database & Performance**
-- Missing database indexing strategy
-- No connection pooling configuration
-- Lazy loading issues partially resolved
-- Need backup/recovery procedures
+### **🗄️ Cơ sở dữ liệu & Hiệu năng / Database & Performance**
+- Thiếu chiến lược indexing database / Missing database indexing strategy
+- Chưa cấu hình connection pooling / No connection pooling configuration
+- Vấn đề lazy loading đã giải quyết một phần / Lazy loading issues partially resolved
+- Cần quy trình backup/recovery / Need backup/recovery procedures
 
-### **🧪 Testing & Quality**
-- No unit tests implemented
-- Missing integration tests  
-- No error handling strategy
-- Need code coverage reports
+### **🧪 Kiểm thử & Chất lượng / Testing & Quality**
+- Chưa triển khai unit tests / No unit tests implemented
+- Thiếu integration tests / Missing integration tests  
+- Không có chiến lược xử lý lỗi / No error handling strategy
+- Cần báo cáo code coverage / Need code coverage reports
 
-### **🚀 DevOps & Monitoring**
-- No CI/CD pipeline
-- Missing environment variable management
-- No health check for application in Docker
-- No monitoring and logging aggregation
+### **🚀 DevOps & Giám sát / DevOps & Monitoring**
+- Không có CI/CD pipeline / No CI/CD pipeline
+- Thiếu quản lý biến môi trường / Missing environment variable management
+- Không có health check cho ứng dụng trong Docker / No health check for application in Docker
+- Thiếu giám sát và tập hợp log / No monitoring and logging aggregation
 
 ## 📋 Development Roadmap
 
