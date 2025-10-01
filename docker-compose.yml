@@ -18,14 +18,14 @@ services:
       retries: 20
 
   pgadmin:
-  image: dpage/pgadmin4
-  ports:
-    - "8081:80"
-  environment:
-    PGADMIN_DEFAULT_EMAIL: admin@devmail.net
-    PGADMIN_DEFAULT_PASSWORD: S3cure!Passw0rd    
-  depends_on:
-    - db
+    image: dpage/pgadmin4
+    ports:
+      - "8081:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@devmail.net
+      PGADMIN_DEFAULT_PASSWORD: S3cure!Passw0rd    
+    depends_on:
+      - db
 
 volumes:
   pgdata:
