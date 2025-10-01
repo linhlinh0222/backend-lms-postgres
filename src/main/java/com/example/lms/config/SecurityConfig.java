@@ -53,18 +53,31 @@ public class SecurityConfig {
                         ).permitAll()
                         
                         // Admin endpoints
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
+                        
+                        // User management endpoints (ADMIN only)
+                        .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                         
                         // Teacher endpoints
-                        .requestMatchers("/api/teacher/**").hasAnyRole("ADMIN", "TEACHER")
+                        .requestMatchers("/api/teacher/**", "/api/v1/teacher/**").hasAnyRole("ADMIN", "TEACHER")
                         
                         // Student endpoints  
-                        .requestMatchers("/api/student/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                        .requestMatchers("/api/student/**", "/api/v1/student/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                        
+                        // Assignment management
+                        .requestMatchers("/api/v1/assignments/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                        
+                        // File upload management
+                        .requestMatchers("/api/v1/files/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                        
+                        // Section and lesson management
+                        .requestMatchers("/api/v1/sections/**", "/api/v1/lessons/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                         
                         // Course management - specific endpoints first
                         .requestMatchers("/api/v1/courses/create", "/api/v1/courses/*/edit").hasAnyRole("ADMIN", "TEACHER")
                         .requestMatchers("/api/v1/courses/my-courses").hasAnyRole("ADMIN", "TEACHER")
                         .requestMatchers("/api/v1/courses/enrolled-courses").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                        .requestMatchers("/api/v1/courses/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                         
                         // All other requests need authentication
                         .anyRequest().authenticated()

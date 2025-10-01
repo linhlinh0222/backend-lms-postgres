@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -47,5 +48,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findByRoleAndEmailContainingIgnoreCaseOrRoleAndFullNameContainingIgnoreCase(
             User.Role role1, String email, User.Role role2, String fullName, Pageable pageable);
     
-    long countByCreatedAtAfter(LocalDateTime createdAt);
+    long countByCreatedAtAfter(Instant createdAt);
 }

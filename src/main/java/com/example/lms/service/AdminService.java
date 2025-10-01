@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class AdminService {
         analytics.put("totalAssignments", totalAssignments);
 
         // Recent activity (last 30 days)
-        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        Instant thirtyDaysAgo = Instant.now().minusSeconds(30 * 24 * 60 * 60);
         long newUsersLast30Days = userRepository.countByCreatedAtAfter(thirtyDaysAgo);
         long newCoursesLast30Days = courseRepository.countByCreatedAtAfter(thirtyDaysAgo);
 
