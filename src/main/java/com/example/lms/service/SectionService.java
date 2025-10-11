@@ -28,13 +28,15 @@ public class SectionService {
             throw new RuntimeException("Bạn không có quyền tạo section cho khóa học này");
         }
 
-        // Only allow creating sections if course is in DRAFT or REJECTED status
-        if (course.getStatus() != Course.CourseStatus.DRAFT && course.getStatus() != Course.CourseStatus.REJECTED) {
-            throw new RuntimeException("Chỉ có thể tạo section cho khóa học ở trạng thái bản nháp hoặc bị từ chối");
+        // Check for duplicate section title within the same course
+        if (sectionRepository.existsByCourseIdAndTitle(courseId, request.getTitle())) {
+            throw new RuntimeException("Trong khóa học này đã có chương '" + request.getTitle() + "'");
         }
 
+        // Approval workflow removed: allow creating sections regardless of course status
+
         // Set order index if not provided
-        int orderIndex = request.getOrderIndex() != null ? request.getOrderIndex() : 
+        int orderIndex = request.getOrderIndex() != null ? request.getOrderIndex() :
                         sectionRepository.findMaxOrderIndexByCourse(course) + 1;
 
         Section section = Section.builder()
@@ -56,13 +58,14 @@ public class SectionService {
             throw new RuntimeException("Bạn không có quyền chỉnh sửa section này");
         }
 
-        // Only allow editing if course is in DRAFT or REJECTED status
-        Course.CourseStatus courseStatus = section.getCourse().getStatus();
-        if (courseStatus != Course.CourseStatus.DRAFT && courseStatus != Course.CourseStatus.REJECTED) {
-            throw new RuntimeException("Chỉ có thể chỉnh sửa section của khóa học ở trạng thái bản nháp hoặc bị từ chối");
-        }
+        // Approval workflow removed: allow editing sections regardless of course status
 
         if (request.getTitle() != null) {
+            // Check for duplicate section title within the same course when updating
+            if (!request.getTitle().equals(section.getTitle()) &&
+                sectionRepository.existsByCourseIdAndTitle(section.getCourse().getId(), request.getTitle())) {
+                throw new RuntimeException("Trong khóa học này đã có chương '" + request.getTitle() + "'");
+            }
             section.setTitle(request.getTitle());
         }
 
@@ -86,11 +89,7 @@ public class SectionService {
             throw new RuntimeException("Bạn không có quyền xóa section này");
         }
 
-        // Only allow deleting if course is in DRAFT or REJECTED status
-        Course.CourseStatus courseStatus = section.getCourse().getStatus();
-        if (courseStatus != Course.CourseStatus.DRAFT && courseStatus != Course.CourseStatus.REJECTED) {
-            throw new RuntimeException("Chỉ có thể xóa section của khóa học ở trạng thái bản nháp hoặc bị từ chối");
-        }
+        // Approval workflow removed: allow deleting regardless of status (optional: enforce ownership only)
 
         sectionRepository.delete(section);
     }

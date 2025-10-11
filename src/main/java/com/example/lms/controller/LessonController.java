@@ -41,7 +41,14 @@ public class LessonController {
             
             return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(lessonDetail));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Có lỗi xảy ra";
+            if (msg.toLowerCase().contains("quyền")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(msg));
+            }
+            if (msg.contains("Không tìm thấy")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(msg));
+            }
+            return ResponseEntity.badRequest().body(ApiResponse.error(msg));
         }
     }
 
@@ -58,7 +65,14 @@ public class LessonController {
             
             return ResponseEntity.ok(ApiResponse.success(lessonDetail));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Có lỗi xảy ra";
+            if (msg.toLowerCase().contains("quyền")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(msg));
+            }
+            if (msg.contains("Không tìm thấy")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(msg));
+            }
+            return ResponseEntity.badRequest().body(ApiResponse.error(msg));
         }
     }
 
@@ -87,9 +101,10 @@ public class LessonController {
             LessonDetail lessonDetail = convertToLessonDetail(lesson);
             
             return ResponseEntity.ok(ApiResponse.success(lessonDetail));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("Không tìm thấy bài học"));
+    } catch (RuntimeException e) {
+        String msg = e.getMessage() != null ? e.getMessage() : "Không tìm thấy bài học";
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error(msg));
         }
     }
 
@@ -100,6 +115,8 @@ public class LessonController {
                 .title(lesson.getTitle())
                 .description(lesson.getDescription())
                 .content(lesson.getContent())
+                .videoUrl(lesson.getVideoUrl())
+                .durationMinutes(lesson.getDurationMinutes())
                 .orderIndex(lesson.getOrderIndex())
                 .sectionId(lesson.getSection().getId())
                 .sectionTitle(lesson.getSection().getTitle())
@@ -116,6 +133,8 @@ public class LessonController {
         private String title;
         private String description;
         private String content;
+        private String videoUrl;
+        private Integer durationMinutes;
         private Integer orderIndex;
         private UUID sectionId;
         private String sectionTitle;
@@ -133,6 +152,8 @@ public class LessonController {
             private String title;
             private String description;
             private String content;
+            private String videoUrl;
+            private Integer durationMinutes;
             private Integer orderIndex;
             private UUID sectionId;
             private String sectionTitle;
@@ -145,6 +166,8 @@ public class LessonController {
             public LessonDetailBuilder title(String title) { this.title = title; return this; }
             public LessonDetailBuilder description(String description) { this.description = description; return this; }
             public LessonDetailBuilder content(String content) { this.content = content; return this; }
+            public LessonDetailBuilder videoUrl(String videoUrl) { this.videoUrl = videoUrl; return this; }
+            public LessonDetailBuilder durationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; return this; }
             public LessonDetailBuilder orderIndex(Integer orderIndex) { this.orderIndex = orderIndex; return this; }
             public LessonDetailBuilder sectionId(UUID sectionId) { this.sectionId = sectionId; return this; }
             public LessonDetailBuilder sectionTitle(String sectionTitle) { this.sectionTitle = sectionTitle; return this; }
@@ -159,6 +182,8 @@ public class LessonController {
                 lesson.title = this.title;
                 lesson.description = this.description;
                 lesson.content = this.content;
+                lesson.videoUrl = this.videoUrl;
+                lesson.durationMinutes = this.durationMinutes;
                 lesson.orderIndex = this.orderIndex;
                 lesson.sectionId = this.sectionId;
                 lesson.sectionTitle = this.sectionTitle;
@@ -175,6 +200,8 @@ public class LessonController {
         public String getTitle() { return title; }
         public String getDescription() { return description; }
         public String getContent() { return content; }
+        public String getVideoUrl() { return videoUrl; }
+        public Integer getDurationMinutes() { return durationMinutes; }
         public Integer getOrderIndex() { return orderIndex; }
         public UUID getSectionId() { return sectionId; }
         public String getSectionTitle() { return sectionTitle; }
@@ -193,6 +220,10 @@ public class LessonController {
 
         private String content;
 
+        private String videoUrl;
+
+        private Integer durationMinutes;
+
         private Integer orderIndex;
 
         // Getters and Setters
@@ -202,6 +233,10 @@ public class LessonController {
         public void setDescription(String description) { this.description = description; }
         public String getContent() { return content; }
         public void setContent(String content) { this.content = content; }
+        public String getVideoUrl() { return videoUrl; }
+        public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+        public Integer getDurationMinutes() { return durationMinutes; }
+        public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
         public Integer getOrderIndex() { return orderIndex; }
         public void setOrderIndex(Integer orderIndex) { this.orderIndex = orderIndex; }
     }
@@ -214,6 +249,10 @@ public class LessonController {
 
         private String content;
 
+        private String videoUrl;
+
+        private Integer durationMinutes;
+
         private Integer orderIndex;
 
         // Getters and Setters
@@ -223,6 +262,10 @@ public class LessonController {
         public void setDescription(String description) { this.description = description; }
         public String getContent() { return content; }
         public void setContent(String content) { this.content = content; }
+        public String getVideoUrl() { return videoUrl; }
+        public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+        public Integer getDurationMinutes() { return durationMinutes; }
+        public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
         public Integer getOrderIndex() { return orderIndex; }
         public void setOrderIndex(Integer orderIndex) { this.orderIndex = orderIndex; }
     }

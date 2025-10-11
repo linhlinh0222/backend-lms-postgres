@@ -47,15 +47,15 @@ CREATE INDEX idx_course_enrollments_course_id ON course_enrollments(course_id);
 CREATE INDEX idx_course_enrollments_student_id ON course_enrollments(student_id);
 
 -- Insert default admin user (password: admin123)
-INSERT INTO users (username, email, password, full_name, role, enabled) VALUES 
+INSERT INTO users (username, email, password, full_name, role, enabled) VALUES
 ('admin', 'admin@lms.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a', 'Administrator', 'ADMIN', true);
 
--- Insert sample teacher (password: teacher123)
-INSERT INTO users (username, email, password, full_name, role, enabled) VALUES 
+-- Insert sample teacher (password: admin123)
+INSERT INTO users (username, email, password, full_name, role, enabled) VALUES
 ('teacher1', 'teacher1@lms.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a', 'Nguyễn Văn Giáo', 'TEACHER', true);
 
--- Insert sample student (password: student123)  
-INSERT INTO users (username, email, password, full_name, role, enabled) VALUES 
+-- Insert sample student (password: admin123)
+INSERT INTO users (username, email, password, full_name, role, enabled) VALUES
 ('student1', 'student1@lms.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a', 'Trần Thị Học', 'STUDENT', true);
 
 -- Insert sample courses

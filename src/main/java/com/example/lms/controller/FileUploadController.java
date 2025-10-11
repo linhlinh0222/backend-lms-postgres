@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
@@ -23,6 +24,23 @@ import java.time.LocalDateTime;
 public class FileUploadController {
 
     private final FileUploadService fileUploadService;
+
+    @PostMapping("/file")
+    @Operation(summary = "Upload file trực tiếp (multipart)", description = "Upload file lên server local để dùng làm video/bài giảng")
+    public ResponseEntity<ApiResponse<FileUploadResponse>> uploadFile(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "type", required = false, defaultValue = "video") String type
+    ) {
+        try {
+            FileUploadRequest req = new FileUploadRequest();
+            req.setType(type);
+            FileUploadResponse res = fileUploadService.uploadFile(file, currentUser, req);
+            return ResponseEntity.ok(ApiResponse.success(res));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
 
     @PostMapping("/signed-url")
     @Operation(summary = "Lấy URL để upload file", description = "Tạo signed URL để upload file lên cloud storage")

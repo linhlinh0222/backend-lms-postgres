@@ -1,10 +1,2 @@
-CREATE TABLE IF NOT EXISTS course (
-  id BIGSERIAL PRIMARY KEY,
-  code VARCHAR(64) NOT NULL UNIQUE,
-  title VARCHAR(255) NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-INSERT INTO course(code,title) VALUES
-('CS101','Intro to Computer Science'),
-('MATH201','Calculus II')
-ON CONFLICT (code) DO NOTHING;
+-- Legacy placeholder removed: original schema conflicted with UUID-based tables.
+-- This migration is intentionally left empty to preserve ordering.

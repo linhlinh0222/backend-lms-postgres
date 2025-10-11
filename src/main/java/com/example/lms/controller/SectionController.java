@@ -41,7 +41,14 @@ public class SectionController {
             
             return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(sectionDetail));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Có lỗi xảy ra";
+            if (msg.toLowerCase().contains("quyền")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(msg));
+            }
+            if (msg.contains("Không tìm thấy")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(msg));
+            }
+            return ResponseEntity.badRequest().body(ApiResponse.error(msg));
         }
     }
 
@@ -58,7 +65,14 @@ public class SectionController {
             
             return ResponseEntity.ok(ApiResponse.success(sectionDetail));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Có lỗi xảy ra";
+            if (msg.toLowerCase().contains("quyền")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(msg));
+            }
+            if (msg.contains("Không tìm thấy")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(msg));
+            }
+            return ResponseEntity.badRequest().body(ApiResponse.error(msg));
         }
     }
 
@@ -72,7 +86,14 @@ public class SectionController {
             sectionService.deleteSection(sectionId, currentUser);
             return ResponseEntity.ok(ApiResponse.success("Section đã được xóa"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Có lỗi xảy ra";
+            if (msg.toLowerCase().contains("quyền")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(msg));
+            }
+            if (msg.contains("Không tìm thấy")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(msg));
+            }
+            return ResponseEntity.badRequest().body(ApiResponse.error(msg));
         }
     }
 
@@ -85,7 +106,7 @@ public class SectionController {
                 .orderIndex(section.getOrderIndex())
                 .courseId(section.getCourse().getId())
                 .courseTitle(section.getCourse().getTitle())
-                .lessonsCount(section.getLessons().size())
+        .lessonsCount(section.getLessons() == null ? 0 : section.getLessons().size())
                 .createdAt(section.getCreatedAt())
                 .updatedAt(section.getUpdatedAt())
                 .build();

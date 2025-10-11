@@ -29,11 +29,7 @@ public class LessonService {
             throw new RuntimeException("Bạn không có quyền tạo bài học cho section này");
         }
 
-        // Only allow creating lessons if course is in DRAFT or REJECTED status
-        Course.CourseStatus courseStatus = section.getCourse().getStatus();
-        if (courseStatus != Course.CourseStatus.DRAFT && courseStatus != Course.CourseStatus.REJECTED) {
-            throw new RuntimeException("Chỉ có thể tạo bài học cho khóa học ở trạng thái bản nháp hoặc bị từ chối");
-        }
+        // Approval workflow removed: allow creating lessons regardless of course status
 
         // Set order index if not provided
         int orderIndex = request.getOrderIndex() != null ? request.getOrderIndex() : 
@@ -42,6 +38,8 @@ public class LessonService {
         Lesson lesson = Lesson.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
+        .videoUrl(request.getVideoUrl())
+        .durationMinutes(request.getDurationMinutes() != null ? request.getDurationMinutes() : 0)
                 .orderIndex(orderIndex)
                 .section(section)
                 .build();
@@ -58,11 +56,7 @@ public class LessonService {
             throw new RuntimeException("Bạn không có quyền chỉnh sửa bài học này");
         }
 
-        // Only allow editing if course is in DRAFT or REJECTED status
-        Course.CourseStatus courseStatus = lesson.getSection().getCourse().getStatus();
-        if (courseStatus != Course.CourseStatus.DRAFT && courseStatus != Course.CourseStatus.REJECTED) {
-            throw new RuntimeException("Chỉ có thể chỉnh sửa bài học của khóa học ở trạng thái bản nháp hoặc bị từ chối");
-        }
+        // Approval workflow removed: allow editing lessons regardless of status
 
         if (request.getTitle() != null) {
             lesson.setTitle(request.getTitle());
@@ -70,6 +64,14 @@ public class LessonService {
 
         if (request.getContent() != null) {
             lesson.setContent(request.getContent());
+        }
+
+        if (request.getVideoUrl() != null) {
+            lesson.setVideoUrl(request.getVideoUrl());
+        }
+
+        if (request.getDurationMinutes() != null) {
+            lesson.setDurationMinutes(request.getDurationMinutes());
         }
 
         if (request.getOrderIndex() != null) {
@@ -88,11 +90,7 @@ public class LessonService {
             throw new RuntimeException("Bạn không có quyền xóa bài học này");
         }
 
-        // Only allow deleting if course is in DRAFT or REJECTED status
-        Course.CourseStatus courseStatus = lesson.getSection().getCourse().getStatus();
-        if (courseStatus != Course.CourseStatus.DRAFT && courseStatus != Course.CourseStatus.REJECTED) {
-            throw new RuntimeException("Chỉ có thể xóa bài học của khóa học ở trạng thái bản nháp hoặc bị từ chối");
-        }
+        // Approval workflow removed: allow deleting lessons regardless of status
 
         lessonRepository.delete(lesson);
     }

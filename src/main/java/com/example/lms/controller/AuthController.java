@@ -23,14 +23,15 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Đăng ký tài khoản mới", description = "Tạo tài khoản người dùng mới")
-    public ResponseEntity<AuthenticationService.AuthenticationResponse> register(
+    public ResponseEntity<?> register(
             @Valid @RequestBody AuthenticationService.RegisterRequest request
     ) {
         try {
             AuthenticationService.AuthenticationResponse response = authenticationService.register(request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            // Return error message in body for frontend consumption
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
         }
     }
 

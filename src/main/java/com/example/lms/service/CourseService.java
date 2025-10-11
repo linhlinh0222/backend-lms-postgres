@@ -4,6 +4,8 @@ import com.example.lms.entity.Course;
 import com.example.lms.entity.Section;
 import com.example.lms.entity.User;
 import com.example.lms.repository.CourseRepository;
+import com.example.lms.repository.UserRepository;
+import com.example.lms.dto.response.BulkEnrollmentResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class CourseService {
 
     private final CourseRepository courseRepository;
+    private final UserRepository userRepository;
 
     public Page<Course> getApprovedCourses(Pageable pageable, String search, String teacher) {
         if (search != null && !search.trim().isEmpty()) {
@@ -38,7 +41,8 @@ public class CourseService {
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .teacher(teacher)
-                .status(Course.CourseStatus.DRAFT)
+        // Immediately approve new courses (no admin approval flow)
+        .status(Course.CourseStatus.APPROVED)
                 .build();
 
         return courseRepository.save(course);
@@ -65,10 +69,7 @@ public class CourseService {
             throw new RuntimeException("Bạn không có quyền chỉnh sửa khóa học này");
         }
 
-        // Only allow editing if course is in DRAFT or REJECTED status
-        if (course.getStatus() != Course.CourseStatus.DRAFT && course.getStatus() != Course.CourseStatus.REJECTED) {
-            throw new RuntimeException("Chỉ có thể chỉnh sửa khóa học ở trạng thái bản nháp hoặc bị từ chối");
-        }
+        // Allow editing regardless of current status (no approval workflow)
 
         if (request.getCode() != null && !request.getCode().equals(course.getCode())) {
             if (courseRepository.existsByCode(request.getCode())) {
@@ -89,31 +90,27 @@ public class CourseService {
     }
 
     public void submitForApproval(UUID courseId, User currentUser) {
+        // No-op approval flow: ensure caller owns the course, then set to APPROVED if not already
         Course course = getCourseById(courseId);
-        
+
         if (!course.getTeacher().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Bạn không có quyền gửi khóa học này để duyệt");
+            throw new RuntimeException("Bạn không có quyền thực hiện thao tác này cho khóa học này");
         }
 
-        if (course.getStatus() != Course.CourseStatus.DRAFT) {
-            throw new RuntimeException("Chỉ có thể gửi khóa học ở trạng thái bản nháp để duyệt");
+        if (course.getStatus() != Course.CourseStatus.APPROVED) {
+            course.setStatus(Course.CourseStatus.APPROVED);
+            courseRepository.save(course);
         }
-
-        course.setStatus(Course.CourseStatus.PENDING);
-        courseRepository.save(course);
     }
 
     public void deleteCourse(UUID courseId, User currentUser) {
         Course course = getCourseById(courseId);
-        
+
         if (!course.getTeacher().getId().equals(currentUser.getId())) {
             throw new RuntimeException("Bạn không có quyền xóa khóa học này");
         }
 
-        if (course.getStatus() != Course.CourseStatus.DRAFT) {
-            throw new RuntimeException("Chỉ có thể xóa khóa học ở trạng thái bản nháp");
-        }
-
+        // Allow deleting courses regardless of status
         courseRepository.delete(course);
     }
 
@@ -124,12 +121,49 @@ public class CourseService {
             throw new RuntimeException("Chỉ có thể đăng ký vào khóa học đã được duyệt");
         }
 
-        if (course.getEnrolledStudents().contains(student)) {
+        // Persist on OWNING side of ManyToMany (User.enrolledCourses)
+        if (student.getEnrolledCourses().contains(course)) {
             throw new RuntimeException("Bạn đã đăng ký khóa học này rồi");
         }
 
+        student.getEnrolledCourses().add(course);
+        // keep both sides in sync in memory
         course.getEnrolledStudents().add(student);
-        courseRepository.save(course);
+        userRepository.save(student);
+    }
+
+    public void enrollStudentByTeacher(UUID courseId, User currentUser, com.example.lms.controller.CourseController.EnrollStudentRequest req) {
+        Course course = getCourseById(courseId);
+
+        // Only the owner teacher of the course or admin can assign enrollments
+        boolean isOwnerTeacher = course.getTeacher().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == User.Role.ADMIN;
+        if (!(isOwnerTeacher || isAdmin)) {
+            throw new RuntimeException("Bạn không có quyền gán học viên cho khóa học này");
+        }
+
+        // Find student by email with STUDENT role only
+        User student = userRepository.findByEmailAndRole(req.getEmail(), User.Role.STUDENT)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy học viên với email: " + req.getEmail()));
+        
+        // No need to check role again since we already filtered by STUDENT role
+
+        if (course.getStatus() != Course.CourseStatus.APPROVED) {
+            throw new RuntimeException("Chỉ có thể gán học viên cho khóa học đã được duyệt");
+        }
+
+        // Idempotent check - use database query
+        if (userRepository.existsByCourseEnrollment(courseId, student.getId())) {
+            throw new RuntimeException("Học viên đã được gán vào khóa học này");
+        }
+
+        java.util.Set<Course> enrolled = student.getEnrolledCourses();
+        if (enrolled == null) {
+            enrolled = new java.util.HashSet<>();
+            student.setEnrolledCourses(enrolled);
+        }
+        enrolled.add(course);
+        userRepository.save(student);
     }
 
     public List<Section> getCourseContent(UUID courseId, User currentUser) {
@@ -143,8 +177,74 @@ public class CourseService {
             throw new RuntimeException("Bạn không có quyền truy cập nội dung khóa học này");
         }
 
-        return course.getSections().stream()
-                .sorted((s1, s2) -> Integer.compare(s1.getOrderIndex(), s2.getOrderIndex()))
-                .toList();
+        java.util.Set<Section> sectionSet = course.getSections();
+        java.util.List<Section> sections = sectionSet == null ? java.util.Collections.emptyList() : new java.util.ArrayList<>(sectionSet);
+        sections.sort((s1, s2) -> Integer.compare(
+                s1.getOrderIndex() != null ? s1.getOrderIndex() : 0,
+                s2.getOrderIndex() != null ? s2.getOrderIndex() : 0
+        ));
+        // Ensure lessons lists are initialized
+        for (Section s : sections) {
+            if (s.getLessons() == null) {
+                s.setLessons(new java.util.ArrayList<>());
+            }
+        }
+        return sections;
+    }
+
+    /**
+     * Bulk enroll multiple students by email
+     */
+    public BulkEnrollmentResponse bulkEnrollStudents(UUID courseId, List<String> emails) {
+        BulkEnrollmentResponse response = BulkEnrollmentResponse.builder().build();
+        
+        Course course = getCourseById(courseId);
+        
+        if (course.getStatus() != Course.CourseStatus.APPROVED) {
+            throw new RuntimeException("Chỉ có thể gán học viên cho khóa học đã được duyệt");
+        }
+        
+        for (String email : emails) {
+            try {
+                // Validate email format
+                if (email == null || email.trim().isEmpty()) {
+                    response.addError(email, BulkEnrollmentResponse.ErrorType.INVALID_EMAIL_FORMAT);
+                    continue;
+                }
+                
+                String trimmedEmail = email.trim().toLowerCase();
+                
+                // Find student by email
+                User student = userRepository.findByEmailAndRole(trimmedEmail, User.Role.STUDENT)
+                    .orElse(null);
+                if (student == null) {
+                    response.addError(trimmedEmail, BulkEnrollmentResponse.ErrorType.EMAIL_NOT_FOUND);
+                    continue;
+                }
+                
+                // Check if already enrolled
+                if (userRepository.existsByCourseEnrollment(courseId, student.getId())) {
+                    response.addError(trimmedEmail, BulkEnrollmentResponse.ErrorType.ALREADY_ENROLLED);
+                    continue;
+                }
+                
+                // Enroll student
+                java.util.Set<Course> enrolled = student.getEnrolledCourses();
+                if (enrolled == null) {
+                    enrolled = new java.util.HashSet<>();
+                    student.setEnrolledCourses(enrolled);
+                }
+                enrolled.add(course);
+                userRepository.save(student);
+                
+                response.addSuccess(trimmedEmail);
+                
+            } catch (Exception e) {
+                response.addError(email, BulkEnrollmentResponse.ErrorType.SYSTEM_ERROR, 
+                    "Lỗi khi gán học viên: " + e.getMessage());
+            }
+        }
+        
+        return response;
     }
 }

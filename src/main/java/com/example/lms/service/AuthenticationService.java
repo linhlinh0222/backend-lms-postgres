@@ -4,7 +4,6 @@ import com.example.lms.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
@@ -51,17 +50,28 @@ public class AuthenticationService {
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         try {
-            // Authenticate user
+            // Resolve user by username or email (client now sends 'email' field which may contain username or email)
+            String identifier = request.getEmail();
+            if (identifier == null || identifier.isBlank()) {
+                throw new RuntimeException("Vui lòng cung cấp email hoặc username");
+            }
+
+            // Try to find by username first
+            var optionalUser = userService.findByUsername(identifier);
+            // If not found by username, try email
+            if (optionalUser.isEmpty()) {
+                optionalUser = userService.findByEmail(identifier);
+            }
+
+            User user = optionalUser.orElseThrow(() -> new RuntimeException("User không tồn tại"));
+
+            // Authenticate using the actual username stored in the user entity
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
+                            user.getUsername(),
                             request.getPassword()
                     )
             );
-
-            // Get user details
-            User user = userService.findByUsername(request.getUsername())
-                    .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
             // Generate tokens
             String jwtToken = jwtService.generateToken(user);
@@ -160,19 +170,19 @@ public class AuthenticationService {
     }
 
     public static class AuthenticationRequest {
-        private String username;
+        private String email;
         private String password;
 
         // Constructors
         public AuthenticationRequest() {}
-        public AuthenticationRequest(String username, String password) {
-            this.username = username;
+        public AuthenticationRequest(String email, String password) {
+            this.email = email;
             this.password = password;
         }
 
         // Getters and Setters
-        public String getUsername() { return username; }
-        public void setUsername(String username) { this.username = username; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
     }

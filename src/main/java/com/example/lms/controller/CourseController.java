@@ -5,6 +5,9 @@ import com.example.lms.entity.Course;
 import com.example.lms.entity.Section;
 import com.example.lms.entity.User;
 import com.example.lms.service.CourseService;
+import com.example.lms.service.ExcelProcessingService;
+import com.example.lms.dto.response.BulkEnrollmentResponse;
+import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -34,6 +37,7 @@ import java.util.stream.Collectors;
 public class CourseController {
 
     private final CourseService courseService;
+    private final ExcelProcessingService excelProcessingService;
 
     @GetMapping
     @Operation(summary = "Lấy danh sách khóa học công khai", description = "Lấy danh sách khóa học đã được duyệt")
@@ -56,10 +60,70 @@ public class CourseController {
         }
     }
 
+    @PostMapping("/{courseId}/enrollments")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @SecurityRequirement(name = "Bearer Authentication")
+    @Operation(summary = "Gán học viên vào khóa học", description = "Giảng viên hoặc admin gán một học viên cụ thể vào khóa học")
+    public ResponseEntity<ApiResponse<String>> enrollStudentByTeacher(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody EnrollStudentRequest request
+    ) {
+        try {
+            courseService.enrollStudentByTeacher(courseId, currentUser, request);
+            return ResponseEntity.ok(ApiResponse.success("Đã gán học viên vào khóa học"));
+        } catch (RuntimeException e) {
+            String msg = e.getMessage();
+            if (msg == null || msg.isBlank()) {
+                msg = e.getClass().getSimpleName();
+            }
+            if (msg.contains("Không tìm thấy")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(msg));
+            }
+            if (msg.toLowerCase().contains("quyền")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(msg));
+            }
+            return ResponseEntity.badRequest().body(ApiResponse.error(msg));
+        }
+    }
+
+    @PostMapping("/{courseId}/bulk-enroll")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @SecurityRequirement(name = "Bearer Authentication")
+    @Operation(summary = "Gán nhiều học viên bằng file Excel", description = "Giảng viên hoặc admin gán nhiều học viên vào khóa học thông qua file Excel")
+    public ResponseEntity<ApiResponse<BulkEnrollmentResponse>> bulkEnrollStudents(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam("file") MultipartFile file
+    ) {
+        try {
+            // Extract emails from Excel file
+            List<String> emails = excelProcessingService.extractEmailsFromExcel(file);
+            
+            if (emails.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Không tìm thấy email nào trong file Excel"));
+            }
+            
+            // Perform bulk enrollment
+            BulkEnrollmentResponse response = courseService.bulkEnrollStudents(courseId, emails);
+            
+            return ResponseEntity.ok(ApiResponse.success(response, 
+                String.format("Đã xử lý %d email: %d thành công, %d lỗi", 
+                    response.getTotalProcessed(), response.getSuccessCount(), response.getErrorCount())));
+                    
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Lỗi xử lý file: " + e.getMessage()));
+        }
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('TEACHER')")
     @SecurityRequirement(name = "Bearer Authentication")
-    @Operation(summary = "Tạo khóa học mới", description = "Giảng viên tạo khóa học mới với trạng thái DRAFT")
+    @Operation(summary = "Tạo khóa học mới", description = "Giảng viên tạo khóa học mới và được duyệt ngay (không cần phê duyệt)")
     public ResponseEntity<ApiResponse<CourseDetail>> createCourse(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody CreateCourseRequest request
@@ -127,8 +191,9 @@ public class CourseController {
             
             return ResponseEntity.ok(ApiResponse.success(courseDetail));
         } catch (RuntimeException e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "Không tìm thấy khóa học";
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("Không tìm thấy khóa học"));
+                    .body(ApiResponse.error(msg));
         }
     }
 
@@ -152,7 +217,7 @@ public class CourseController {
 
     @PatchMapping("/{courseId}/publish")
     @SecurityRequirement(name = "Bearer Authentication")
-    @Operation(summary = "Gửi khóa học để duyệt", description = "Giảng viên gửi khóa học để admin duyệt")
+    @Operation(summary = "Đánh dấu khóa học đã duyệt", description = "Bỏ quy trình duyệt: thao tác này đảm bảo khóa học ở trạng thái APPROVED")
     public ResponseEntity<ApiResponse<String>> publishCourse(
             @PathVariable UUID courseId,
             @AuthenticationPrincipal User currentUser
@@ -167,7 +232,7 @@ public class CourseController {
 
     @DeleteMapping("/{courseId}")
     @SecurityRequirement(name = "Bearer Authentication")
-    @Operation(summary = "Xóa khóa học", description = "Giảng viên xóa khóa học của mình (chỉ khi là DRAFT)")
+    @Operation(summary = "Xóa khóa học", description = "Giảng viên xóa khóa học của mình")
     public ResponseEntity<ApiResponse<String>> deleteCourse(
             @PathVariable UUID courseId,
             @AuthenticationPrincipal User currentUser
@@ -211,12 +276,24 @@ public class CourseController {
             
             return ResponseEntity.ok(ApiResponse.success(content));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Có lỗi xảy ra";
+            if (msg.toLowerCase().contains("quyền")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(msg));
+            }
+            if (msg.contains("Không tìm thấy")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(msg));
+            }
+            return ResponseEntity.badRequest().body(ApiResponse.error(msg));
         }
     }
 
     // Helper methods
     private CourseSummary convertToCourseSummary(Course course) {
+        int enrolledCount = 0;
+        try {
+            enrolledCount = course.getEnrolledStudents() != null ? course.getEnrolledStudents().size() : 0;
+        } catch (Exception ignored) {}
+
         return CourseSummary.builder()
                 .id(course.getId())
                 .code(course.getCode())
@@ -224,13 +301,23 @@ public class CourseController {
                 .description(course.getDescription())
                 .status(course.getStatus().name())
                 .teacherName(course.getTeacher().getFullName())
-                .enrolledCount(course.getEnrolledStudents().size())
+                .enrolledCount(enrolledCount)
                 .createdAt(course.getCreatedAt())
                 .build();
     }
 
     private CourseDetail convertToCourseDetail(Course course) {
-        return CourseDetail.builder()
+    int sectionsCount = 0;
+    try {
+        sectionsCount = course.getSections() != null ? course.getSections().size() : 0;
+    } catch (Exception ignored) {}
+
+    int enrolledCount = 0;
+    try {
+        enrolledCount = course.getEnrolledStudents() != null ? course.getEnrolledStudents().size() : 0;
+    } catch (Exception ignored) {}
+
+    return CourseDetail.builder()
                 .id(course.getId())
                 .code(course.getCode())
                 .title(course.getTitle())
@@ -238,15 +325,16 @@ public class CourseController {
                 .status(course.getStatus().name())
                 .teacherId(course.getTeacher().getId())
                 .teacherName(course.getTeacher().getFullName())
-                .enrolledCount(course.getEnrolledStudents().size())
-                .sectionsCount(course.getSections().size())
+                .enrolledCount(enrolledCount)
+        .sectionsCount(sectionsCount)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .build();
     }
 
     private SectionWithLessons convertToSectionWithLessons(Section section) {
-        List<LessonSummary> lessons = section.getLessons().stream()
+        List<com.example.lms.entity.Lesson> rawLessons = section.getLessons() != null ? section.getLessons() : java.util.Collections.emptyList();
+        List<LessonSummary> lessons = rawLessons.stream()
                 .map(lesson -> LessonSummary.builder()
                         .id(lesson.getId())
                         .title(lesson.getTitle())
@@ -513,5 +601,14 @@ public class CourseController {
         public void setTitle(String title) { this.title = title; }
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
+    }
+
+    // Request for teacher/admin enrollment - simplified to email only
+    public static class EnrollStudentRequest {
+        @NotBlank(message = "Email không được để trống")
+        private String email;
+
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
     }
 }

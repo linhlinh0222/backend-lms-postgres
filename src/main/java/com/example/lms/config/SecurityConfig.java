@@ -2,7 +2,7 @@ package com.example.lms.config;
 
 import com.example.lms.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -46,11 +46,13 @@ public class SecurityConfig {
                                 "/api/v1/auth/**", // Fixed: Add v1 auth endpoints
                                 "/api/v1/health/**",
                                 "/api/health/**",
-                                "/api/v1/courses", // Public course list (approved courses only)
+                "/api/v1/courses", // Public course list (approved courses only)
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+            // Public read-only course endpoints (detail) - allow GET for course detail
+            .requestMatchers(HttpMethod.GET, "/api/v1/courses/*").permitAll()
                         
                         // Admin endpoints
                         .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
@@ -67,8 +69,13 @@ public class SecurityConfig {
                         // Assignment management
                         .requestMatchers("/api/v1/assignments/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                         
-                        // File upload management
+                        // File streaming: allow GET to serve uploaded files (video/audio/images)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/files/**").permitAll()
+                        // Other file operations (upload/delete) require auth
                         .requestMatchers("/api/v1/files/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                        
+                        // Document upload and parsing (TEACHER/ADMIN only)
+                        .requestMatchers("/api/v1/documents/**").hasAnyRole("ADMIN", "TEACHER")
                         
                         // Section and lesson management
                         .requestMatchers("/api/v1/sections/**", "/api/v1/lessons/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")

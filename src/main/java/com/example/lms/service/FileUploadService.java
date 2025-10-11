@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -196,7 +195,8 @@ public class FileUploadService {
         
         // Extract file path from URL and delete
         // This is a simplified implementation
-        String fileName = request.getFileUrl().substring(request.getFileUrl().lastIndexOf("/") + 1);
-        // Delete file logic would go here
+        // Extract file path from URL if needed for future physical deletion
+        // String fileName = request.getFileUrl().substring(request.getFileUrl().lastIndexOf("/") + 1);
+        // TODO: Implement physical deletion if files are stored locally or in cloud storage
     }
 }
