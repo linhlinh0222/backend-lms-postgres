@@ -43,8 +43,35 @@ public class Assignment {
     @Builder.Default
     private BigDecimal maxScore = BigDecimal.valueOf(100.00);
     
+    @Column(name = "assignment_type")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private AssignmentType assignmentType = AssignmentType.FILE_SUBMISSION;
+    
+    @Column(name = "assignment_config", columnDefinition = "jsonb")
+    private String assignmentConfig; // JSON string for type-specific config
+    
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private AssignmentStatus status = AssignmentStatus.DRAFT;
+    
     @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Submission> submissions;
+    
+    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AssignmentAttachment> attachments;
+    
+    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AssignmentRubric> rubrics;
+    
+    public enum AssignmentType {
+        ESSAY, QUIZ, PROGRAMMING, PROJECT, FILE_SUBMISSION
+    }
+    
+    public enum AssignmentStatus {
+        DRAFT, PUBLISHED, CLOSED
+    }
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

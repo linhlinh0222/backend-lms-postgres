@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -43,11 +44,16 @@ public class Lesson {
     @Column(name = "order_index", nullable = false)
     @Builder.Default
     private Integer orderIndex = 0;
-    
+
+    @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC")
+    @Builder.Default
+    private List<LessonAttachment> attachments = new java.util.ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
-    
+
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;

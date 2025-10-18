@@ -2,8 +2,10 @@ package com.example.lms.controller;
 
 import com.example.lms.dto.ApiResponse;
 import com.example.lms.entity.Lesson;
+import com.example.lms.entity.LessonAttachment;
 import com.example.lms.entity.User;
 import com.example.lms.service.LessonService;
+import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -118,12 +120,30 @@ public class LessonController {
                 .videoUrl(lesson.getVideoUrl())
                 .durationMinutes(lesson.getDurationMinutes())
                 .orderIndex(lesson.getOrderIndex())
+                .attachments(lesson.getAttachments() != null ?
+                    lesson.getAttachments().stream()
+                        .map(this::convertToAttachmentDetail)
+                        .toList() : java.util.Collections.emptyList())
                 .sectionId(lesson.getSection().getId())
                 .sectionTitle(lesson.getSection().getTitle())
                 .courseId(lesson.getSection().getCourse().getId())
                 .courseTitle(lesson.getSection().getCourse().getTitle())
                 .createdAt(lesson.getCreatedAt())
                 .updatedAt(lesson.getUpdatedAt())
+                .build();
+    }
+
+    private AttachmentDetail convertToAttachmentDetail(LessonAttachment attachment) {
+        return AttachmentDetail.builder()
+                .id(attachment.getId())
+                .fileName(attachment.getFileName())
+                .originalFileName(attachment.getOriginalFileName())
+                .fileUrl(attachment.getFileUrl())
+                .fileSize(attachment.getFileSize())
+                .contentType(attachment.getContentType())
+                .fileType(attachment.getFileType())
+                .displayOrder(attachment.getDisplayOrder())
+                .uploadedAt(attachment.getUploadedAt())
                 .build();
     }
 
@@ -136,6 +156,7 @@ public class LessonController {
         private String videoUrl;
         private Integer durationMinutes;
         private Integer orderIndex;
+        private List<AttachmentDetail> attachments;
         private UUID sectionId;
         private String sectionTitle;
         private UUID courseId;
@@ -155,6 +176,7 @@ public class LessonController {
             private String videoUrl;
             private Integer durationMinutes;
             private Integer orderIndex;
+            private List<AttachmentDetail> attachments;
             private UUID sectionId;
             private String sectionTitle;
             private UUID courseId;
@@ -169,6 +191,7 @@ public class LessonController {
             public LessonDetailBuilder videoUrl(String videoUrl) { this.videoUrl = videoUrl; return this; }
             public LessonDetailBuilder durationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; return this; }
             public LessonDetailBuilder orderIndex(Integer orderIndex) { this.orderIndex = orderIndex; return this; }
+            public LessonDetailBuilder attachments(List<AttachmentDetail> attachments) { this.attachments = attachments; return this; }
             public LessonDetailBuilder sectionId(UUID sectionId) { this.sectionId = sectionId; return this; }
             public LessonDetailBuilder sectionTitle(String sectionTitle) { this.sectionTitle = sectionTitle; return this; }
             public LessonDetailBuilder courseId(UUID courseId) { this.courseId = courseId; return this; }
@@ -185,6 +208,7 @@ public class LessonController {
                 lesson.videoUrl = this.videoUrl;
                 lesson.durationMinutes = this.durationMinutes;
                 lesson.orderIndex = this.orderIndex;
+                lesson.attachments = this.attachments;
                 lesson.sectionId = this.sectionId;
                 lesson.sectionTitle = this.sectionTitle;
                 lesson.courseId = this.courseId;
@@ -209,6 +233,70 @@ public class LessonController {
         public String getCourseTitle() { return courseTitle; }
         public Instant getCreatedAt() { return createdAt; }
         public Instant getUpdatedAt() { return updatedAt; }
+        public List<AttachmentDetail> getAttachments() { return attachments; }
+    }
+
+    public static class AttachmentDetail {
+        private UUID id;
+        private String fileName;
+        private String originalFileName;
+        private String fileUrl;
+        private Long fileSize;
+        private String contentType;
+        private String fileType;
+        private Integer displayOrder;
+        private Instant uploadedAt;
+
+        public static AttachmentDetailBuilder builder() {
+            return new AttachmentDetailBuilder();
+        }
+
+        public static class AttachmentDetailBuilder {
+            private UUID id;
+            private String fileName;
+            private String originalFileName;
+            private String fileUrl;
+            private Long fileSize;
+            private String contentType;
+            private String fileType;
+            private Integer displayOrder;
+            private Instant uploadedAt;
+
+            public AttachmentDetailBuilder id(UUID id) { this.id = id; return this; }
+            public AttachmentDetailBuilder fileName(String fileName) { this.fileName = fileName; return this; }
+            public AttachmentDetailBuilder originalFileName(String originalFileName) { this.originalFileName = originalFileName; return this; }
+            public AttachmentDetailBuilder fileUrl(String fileUrl) { this.fileUrl = fileUrl; return this; }
+            public AttachmentDetailBuilder fileSize(Long fileSize) { this.fileSize = fileSize; return this; }
+            public AttachmentDetailBuilder contentType(String contentType) { this.contentType = contentType; return this; }
+            public AttachmentDetailBuilder fileType(String fileType) { this.fileType = fileType; return this; }
+            public AttachmentDetailBuilder displayOrder(Integer displayOrder) { this.displayOrder = displayOrder; return this; }
+            public AttachmentDetailBuilder uploadedAt(Instant uploadedAt) { this.uploadedAt = uploadedAt; return this; }
+
+            public AttachmentDetail build() {
+                AttachmentDetail attachment = new AttachmentDetail();
+                attachment.id = this.id;
+                attachment.fileName = this.fileName;
+                attachment.originalFileName = this.originalFileName;
+                attachment.fileUrl = this.fileUrl;
+                attachment.fileSize = this.fileSize;
+                attachment.contentType = this.contentType;
+                attachment.fileType = this.fileType;
+                attachment.displayOrder = this.displayOrder;
+                attachment.uploadedAt = this.uploadedAt;
+                return attachment;
+            }
+        }
+
+        // Getters
+        public UUID getId() { return id; }
+        public String getFileName() { return fileName; }
+        public String getOriginalFileName() { return originalFileName; }
+        public String getFileUrl() { return fileUrl; }
+        public Long getFileSize() { return fileSize; }
+        public String getContentType() { return contentType; }
+        public String getFileType() { return fileType; }
+        public Integer getDisplayOrder() { return displayOrder; }
+        public Instant getUploadedAt() { return uploadedAt; }
     }
 
     public static class CreateLessonRequest {

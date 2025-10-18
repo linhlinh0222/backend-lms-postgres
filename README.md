@@ -116,6 +116,25 @@ PUT    /api/v1/lessons/{id}      - Cập nhật bài học / Update lesson
 DELETE /api/v1/lessons/{id}      - Xóa bài học / Delete lesson
 ```
 
+### **📎 Quản lý tài liệu đính kèm bài học / Lesson Attachment Management**
+```
+GET    /api/v1/lessons/{lessonId}/attachments                    - Lấy danh sách file đính kèm / Get lesson attachments
+POST   /api/v1/lessons/{lessonId}/attachments                    - Tải file đính kèm lên / Upload lesson attachment (TEACHER/ADMIN)
+DELETE /api/v1/lessons/attachments/{attachmentId}               - Xóa file đính kèm / Delete attachment (TEACHER/ADMIN)
+PUT    /api/v1/lessons/attachments/{attachmentId}/reorder       - Thay đổi thứ tự file / Reorder attachment (TEACHER/ADMIN)
+```
+
+**Supported File Types:**
+- 📄 Documents: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX
+- 🎥 Videos: MP4, AVI, MOV
+- 🎵 Audio: MP3, WAV
+- 📦 Archives: ZIP, RAR
+
+**File Validation:**
+- Maximum size: 100MB per file
+- Security: File type validation and virus scanning
+- Storage: Local filesystem with cloud storage support
+
 ### **📝 Quản lý bài tập / Assignment Management**
 ```
 GET    /api/v1/assignments       - Danh sách bài tập / List assignments
@@ -161,12 +180,16 @@ V3__create_course_content_structure.sql -- Chương & bài học / Sections & le
 V4__create_assignment_submissions_table.sql -- Hệ thống bài tập / Assignment system
 V5__add_instructions_to_assignments.sql -- Cải tiến bài tập / Assignment enhancements
 V6__add_description_to_lessons.sql   -- Mô tả bài học / Lesson descriptions
+V7__create_lesson_assignments.sql    -- Phân phối bài học / Lesson assignments
+V8__enhance_assignments_coursera_style.sql -- Bài tập kiểu Coursera / Coursera-style assignments
+V9__add_lesson_attachments.sql       -- File đính kèm bài học / Lesson attachments
 ```
 
 ### **Mối quan hệ thực thể / Database Entity Relations**
 ```
 Users (1) ←→ (N) Courses (đăng ký khóa học / enrollment)
 Courses (1) → (N) Sections → (N) Lessons (cấu trúc nội dung)
+Lessons (1) → (N) LessonAttachments (file đính kèm / attachments)
 Courses (1) → (N) Assignments → (N) AssignmentSubmissions (hệ thống bài tập)
 Users (1) → (N) AssignmentSubmissions (bài nộp của sinh viên)
 ```
@@ -194,41 +217,48 @@ backend-lms-postgres/
     │   │   ├── FileUploadController.java # File operations
     │   │   ├── HealthController.java   # Health checks
     │   │   ├── LessonController.java   # Lesson management
+    │   │   ├── LessonAttachmentController.java # Lesson attachment management
     │   │   ├── SectionController.java  # Section management
     │   │   └── UserController.java     # User CRUD operations
     │   ├── dto/                        # Data Transfer Objects
     │   │   ├── ApiResponse.java        # Standardized API responses
     │   │   └── ErrorResponse.java      # Error handling DTOs
-    │   ├── entity/                     # JPA Entities (7)
+    │   ├── entity/                     # JPA Entities (9)
     │   │   ├── Assignment.java         # Assignment model
     │   │   ├── AssignmentSubmission.java # Submission model  
     │   │   ├── Course.java             # Course model
     │   │   ├── Lesson.java             # Lesson model
+    │   │   ├── LessonAttachment.java   # Lesson attachment model
+    │   │   ├── LessonAssignment.java   # Lesson assignment model
     │   │   ├── Section.java            # Section model
     │   │   ├── Submission.java         # Legacy submission
     │   │   └── User.java               # User model with roles
-    │   ├── repository/                 # JPA Repositories (7)  
+    │   ├── repository/                 # JPA Repositories (9)  
     │   │   ├── AssignmentRepository.java
     │   │   ├── AssignmentSubmissionRepository.java
     │   │   ├── CourseRepository.java
     │   │   ├── LessonRepository.java
+    │   │   ├── LessonAttachmentRepository.java
+    │   │   ├── LessonAssignmentRepository.java
     │   │   ├── SectionRepository.java
     │   │   ├── SubmissionRepository.java
     │   │   └── UserRepository.java
-    │   └── service/                    # Business Logic Services (8)
+    │   └── service/                    # Business Logic Services (10)
     │       ├── AdminService.java       # Analytics & reporting
     │       ├── AssignmentService.java  # Assignment business logic
-    │       ├── AuthService.java        # Authentication logic
+    │       ├── AuthenticationService.java # Authentication logic
     │       ├── CourseService.java      # Course business logic
     │       ├── FileUploadService.java  # File handling logic
     │       ├── LessonService.java      # Lesson business logic
+    │       ├── LessonAttachmentService.java # Lesson attachment business logic
+    │       ├── LessonAssignmentService.java # Lesson assignment business logic
     │       ├── SectionService.java     # Section business logic
     │       └── UserService.java        # User management logic
     └── resources/
         ├── application.yml             # Main configuration
         ├── application-dev.yml         # Development settings
         ├── application-prod.yml        # Production settings
-        └── db/migration/              # Flyway migrations (V1-V6)
+        └── db/migration/              # Flyway migrations (V1-V9)
 ```
 
 ## 🐳 Docker Services
@@ -361,7 +391,58 @@ services:
 - [ ] Docker health checks for application
 - [ ] Production deployment strategy
 
-## 📝 License
+## � Lesson Attachment System
+
+### **System Overview**
+The LMS now includes a comprehensive lesson attachment system similar to Udemy/Coursera, allowing teachers to upload multiple files per lesson.
+
+### **Key Features**
+- **Multi-file Support**: Upload multiple attachments per lesson
+- **File Type Validation**: Support for documents, presentations, videos, audio files
+- **Security**: File type validation, size limits, and permission checks
+- **Organization**: Display order management for attachments
+- **Storage**: Local filesystem with cloud storage ready architecture
+
+### **Database Schema**
+```sql
+CREATE TABLE lesson_attachments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    original_file_name VARCHAR(255) NOT NULL,
+    file_url VARCHAR(500) NOT NULL,
+    file_size BIGINT NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    file_type VARCHAR(50) NOT NULL, -- 'document', 'presentation', 'spreadsheet', 'video', 'audio', 'other'
+    display_order INTEGER NOT NULL DEFAULT 0,
+    uploaded_by UUID REFERENCES users(id),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### **API Usage Examples**
+```bash
+# Upload attachment
+curl -X POST "http://localhost:8088/api/v1/lessons/{lessonId}/attachments" \
+  -H "Authorization: Bearer {token}" \
+  -F "file=@document.pdf" \
+  -F "displayOrder=1"
+
+# Get lesson attachments
+curl -X GET "http://localhost:8088/api/v1/lessons/{lessonId}/attachments" \
+  -H "Authorization: Bearer {token}"
+
+# Delete attachment
+curl -X DELETE "http://localhost:8088/api/v1/lessons/attachments/{attachmentId}" \
+  -H "Authorization: Bearer {token}"
+```
+
+### **Permission System**
+- **Teachers**: Can upload, view, reorder, and delete attachments for their lessons
+- **Students**: Can view and download attachments for enrolled courses
+- **Admin**: Full access to all lesson attachments
+
+## �📝 License
 
 MIT License
 
